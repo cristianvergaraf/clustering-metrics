@@ -58,7 +58,7 @@ summarize_fa <- function(wb,df, n = i,it = iterations, pc = parameter_combinatio
   wb$add_data("resultados", df[1,], startCol = 2, startRow = 2 + n, colNames = FALSE, rowNames = FALSE)
   }
   else{
-    wb$add_data("resultados", df[1,], startCol = 2, startRow = (pc+2*(it-1)) + n, colNames = FALSE, rowNames = FALSE)
+    wb$add_data("resultados", df[1,], startCol = 2, startRow = ((pc+2)*(it-1)) + n, colNames = FALSE, rowNames = FALSE)
   }
     return(wb)
   
@@ -67,27 +67,24 @@ summarize_fa <- function(wb,df, n = i,it = iterations, pc = parameter_combinatio
 
 # Funcion que a partir una lista de parametros prueba todas las combinaciones, y devuelve los resultados 
 
-factor_analysis_export <- function(data,n_factors, fm_methods, rotate_methods){
+factor_analysis_export <- function(data_list,data_names, n_factors, fm_methods, rotate_methods){
   # Generate all possible combinations of parameters
   parameter_combinations <- tidyr::expand_grid(n_factors = as.integer(n_factors),
                                                fm_methods = fm_methods,
                                                rotate_methods = rotate_methods)
   
-  
-  # Create an empty data frame to store the results
+  # Create an empty structures to save results
   loading_list <- list()
-  result_df <- data.frame()
+  result_df <- data.frame() # Esto se sigue utilizando ??
   vector_names <-c()
   wb <- wb_workbook()
   wb$add_worksheet(sheet = "resultados")
   number_parameter_combinations = nrow(parameter_combinations)
   iterations = 0
-  data_names = paste("data",seq(length(data_list)), sep = "")
+  #data_names = paste("data",seq(length(data_list)), sep = "")
   
   for  (data in data_list) {
     iterations = iterations +  1
-    
-    
     
   # Iterate over the parameter combinations
     for (i in 1:nrow(parameter_combinations)) {
@@ -101,38 +98,38 @@ factor_analysis_export <- function(data,n_factors, fm_methods, rotate_methods){
       
       fa_result <- fa(r = data, nfactors = n, fm = fm, rotate = rotate)
       
-      variance_result <- df_factors(fa_result) 
+      variance_result <- df_factors(fa_result) #  Funcion propia. Devuelve un dataframe de un fila de la varianza. 
+      # m = length(colnames(data)) 
     
-      m = length(colnames(data)) 
-    
-      resultados <- data.frame(fa_result$loadings)
-      resultados_n <- resultados[1:m,] # Esto en principio no es necesario. 
-    
-      resultados1 <- data.frame(comunality = fa_result$communality, complexity = fa_result$complexity, uniqueness = fa_result$uniquenesses
+      # Vamoso a crear un data fram 
+      loadings_values <- data.frame(fa_result$loadings[])
+      #resultados_n <- resultados[1:m,] # Esto en principio no es necesario. 
+      
+      
+      # Resultados 1 es dataframe. Comunalidad, complexity, unicicidad
+      complexity <- data.frame(comunality = fa_result$communality, complexity = fa_result$complexity, uniqueness = fa_result$uniquenesses
       )
       
       Parameters = paste("data = ", data_names[iterations],"nfactors =", n, "fm =", fm, "rotate =", rotate)
     
-      final <- cbind(resultados_n,resultados1) 
-    
-      loading_list[[length(loading_list) + 1]] <- final
+      final <- cbind(loadings_values,complexity)  # Este es el data.frame resultado de cada fa. 
       
-      vector_names = c(vector_names,Parameters)
+      loading_list[[length(loading_list) + 1]] <- final ### Esto se almacena en una lista y luego se exporta a un hoja de excel
+      
+      # Constructor de nombres. Para que se utiliza este constructor de nombres?
+      
+      vector_names = c(vector_names,Parameters) # Estamos creando una lista de nombres para darle a los elementos de la lista
+      
+      parameters_model <- data.frame(Parameters = paste("data = ", data_names[iterations],"nfactors =", n, "fm =", fm, "rotate =", rotate)) 
+      
+      res_var <- cbind(parameters_model,variance_result) # este dataframe debe irse agregando en cada iteracion en una hoja workbook
       
       
-      result <- data.frame(Parameters = paste("data = ", data_names[iterations],"nfactors =", n, "fm =", fm, "rotate =", rotate)) 
+      names(loading_list) <- vector_names ## Le damos un nombre a cada elemento de la lista basado en el vector vecto_names
       
-      
-      
-      res_var <- cbind(result,variance_result) # este dataframe debe irse agregando en cada iteracion en una hoja workbook
-      
-      
-      names(loading_list) <- vector_names
-      
-      wb <- summarize_fa(wb,res_var,i, iterations,number_parameter_combinations)
+      wb <- summarize_fa(wb,res_var,i,iterations,number_parameter_combinations)
   
     } 
-    
     
   
   }  
@@ -142,7 +139,6 @@ factor_analysis_export <- function(data,n_factors, fm_methods, rotate_methods){
   export_list_to_excel(loading_list, output_file)
   
   wb_save(wb, path = "wb_test.xlsx")
-  
   
   
 } 
