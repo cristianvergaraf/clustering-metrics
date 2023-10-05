@@ -46,7 +46,7 @@ def read_csv_file(file_path):
     df = df.set_index('Ciudades')
     return df
 
-def lista_observaciones_1(df):
+def lista_observaciones(df):
     column_names_list = []
     column_ciudades_list = []
     df = df.reset_index()
@@ -55,6 +55,7 @@ def lista_observaciones_1(df):
         column_ciudades_list.append(list(df[df[column] == 'atipico']['Ciudades']))
         
     
-    df_metricas = pd.DataFrame({'Variables':column_names_list,'Ciudades':column_ciudades_list})
+    df_metricas = pd.DataFrame({'Variables':column_names_list,'Ciudades_outliers':column_ciudades_list})
     df_metricas = df_metricas.query('Variables != "Ciudades"')
     return df_metricas
+
