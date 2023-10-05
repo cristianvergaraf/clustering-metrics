@@ -1,5 +1,10 @@
 ####### Define the parameter lists ##########
 
+## 02.10.2023###
+## Este script contiene el flujo de trabajo que ejectura la funcion search_fa_parameters para realizar
+## varios analisis factoriales exportando sus resultados a un excel.
+
+
 library(psych)
 library(GPArotation)
 library(dplyr)
@@ -29,8 +34,10 @@ completos_PTRANS <- lista_datos$df_datos_PTrans.csv
 ########################################################################################
 ########################################################################################
 
-## Vaerificar eliminar variables una a una en funcion a la distribucion y el numero de outliers que existen ####
-### Primer intento corresponde a eliminar SQUARE_MN muhcos outliers
+##  Eliminar variables una a una en funcion utilizando como criterio la distribucion original de la variable
+##  que tan alejado de la normalidad esta la variable y el numero de outliers que existen en esta variable ####
+
+### Primer intento: Eliminar SQUARE_MN. Criterio: Muchos outliers
 
 
 lista_sel_44 <- lapply(lista_datos, dplyr::select, -c("SQUARE_MN","AREA_AM", "DIVISION", "Vehiculos","SHAPE_MD","PobH")) # Tenemos el normalizer
@@ -192,49 +199,38 @@ factor_analysis_export(datos_seleccion_1, nombres_seleccion_1, n_factors, fm_met
 
 
 ################################################################################################################
-#### Explicando cosas locas que se deben explicar ####. 
+#### 
+
+# Nuevas pruebas de seleccion de variables ####
+
+### 28.06.2023 ###
+
+
+## Cargar datos completos ####
+
+setwd("C:/Users/CRISTIAN/github/clustering-metrics/datos/datos_completos")
+
+archivos <- list.files(path = ".", pattern = "*.csv$")
+
+lista_datos <- lapply(archivos, read.csv, fileEncoding = "ISO-8859-1") %>% lapply(dplyr::select, -c("Ciudades","X"))
+
+names(lista_datos) = archivos
+
+lista_seleccion_2 <- lapply(lista_datos, dplyr::select, c("TA","LPI","AREA_MN","AREA_AM","SHEI","SIDI","SPLIT","MESH","DIVISION", "SHAPE_MN","PAFRAC","IJI","LSI","TE","ED",
+                                                          "RNMDP_2020","PobT", "Vehiculos","T_Viv_Prin", "COM","ED_SING","EQUIP","IND","OFI","RES_PLU","RES_UNI"))
 
 
 
+datos_seleccion_2 <- list(lista_seleccion_2$df_datos_Maxabs.csv,lista_seleccion_2$df_datos_MinMax.csv,lista_seleccion_2$df_datos_Normalizer.csv, lista_seleccion_2$df_datos_Normalizer.csv,
+                          lista_seleccion_2$df_datos_PTrans.csv, lista_seleccion_2$df_datos_Rscaler.csv, lista_seleccion_2$df_datos_std.csv)
 
+nombres_seleccion_2 <- c("df_datos_Maxabs","df_datos_MinMax","df_datos_Normalizer", "df_datos_Normalizer",
+                         "df_datos_PTrans", "df_datos_Rscaler", "df_datos_std")
 
-
-
-
-##########################################################################
-
-#data_list = list(completos_PTRANS,PTRANS_44,NORM_44,PTRANS32,NORM32, Maxabs_ocio)
-
-#data_list <- list(completos_PTRANS,PTRANS_44,NORM_44,PTRANS32,NORM32, Maxabs_ocio, MinMax_ocio, Norm_ocio, Ptrans_ocio, Rscaler_ocio,Std_ocio, Norm_sel1, PTrans_sel1,
- #                Norm_sel2,PTrans_sel2,Norm_sel3,PTrans_sel3)
-
-#datos = c("completos_PTRANS","PTRANS_44","NORM_44","PTRANS32","NORM32", "Maxabs_ocio")
-
-
-#data_list <- list(Norm_sel2,PTrans_sel2,Norm_sel3,PTrans_sel3,Norm_sel4)
-#datos <- c("Norm_sel2","PTrans_sel2","Norm_sel3","PTrans_sel3","Norm_sel4")
-
-
-n_factors <- c(2, 3,4,5)
+n_factors <- c(4,5)
 fm_methods <- c("minchi")
-rotate_methods <- c("varimax","quartimax","bentlerT","equamax","varimin","geominT")
-
-
-
-parameter_combinations <- tidyr::expand_grid(data = datos, n_factors = as.integer(n_factors),
-                                             fm_methods = fm_methods,
-                                             rotate_methods = rotate_methods)
-
-
-#View(parameter_combinations)
-
-########################################################################
-
-#datos <- c("PTRANS32","NORM32","Maxabs_ocio","MinMax_ocio","Norm_ocio","Ptrans_ocio","Rscaler_ocio","Std_ocio")
-
-#data_list <- list(PTRANS32,NORM32,Maxabs_ocio,MinMax_ocio,Norm_ocio,Ptrans_ocio,Rscaler_ocio,Std_ocio)
-
-
+#rotate_methods <- c("varimax","quartimax","bentlerT","equamax","varimin","geominT")
+rotate_methods <- c("promax","oblimin")
 
 setwd("C:/Users/CRISTIAN/github/clustering-metrics")
 
@@ -242,45 +238,230 @@ source("function_search_FA_parameters.R")
 
 library(dplyr)
 
-factor_analysis_export(data_list, datos, n_factors, fm_methods, rotate_methods)
-
-fa(lista_ocio,nfactors  = 3, fm = "minchi", rotate = "promax")
-
-library(psych)
-
-lista_ocio
-  
-#################################################################################
-
-## Test de la funcion factor_analysis_export ####
-
-# Uno de los fundamentos se basa en la siguiente función.
-
-n_factors <- c(2,3)
-
-fm <- c("minchi")
-rotate <- c("varimax")
-datos = c("completos_PTRANS","NORM32","PTRANS_44")
-
-View(parameter_combinations)
-
-###############################
+factor_analysis_export(datos_seleccion_2, nombres_seleccion_2, n_factors, fm_methods, rotate_methods)
 
 
-fa_result <- fa(r = PTRANS_44 , nfactors = 4, fm = 'minchi', rotate = "varimax")
+################################################################################################################
 
-data_names = paste("data",seq(length(data_list)), sep = "")
 
-iterations = 1
+# Nuevas pruebas de seleccion de variables ####
 
-n = 4
+### 28.06.2023 ###
 
-par <- data.frame(Parameters = paste("data = ", data_names[iterations],"nfactors =", n, "fm =", fm, "rotate =", rotate))
+## Parte II. Seleccion de un menor numero de variables ##
 
-var_resul <- df_factors(fa_result)
+## Cargar datos completos ####
 
-cbind(par, var_resul)
+setwd("C:/Users/CRISTIAN/github/clustering-metrics/datos/datos_completos")
 
-for (data in data_list){
-  print(data)
-}
+archivos <- list.files(path = ".", pattern = "*.csv$")
+
+lista_datos <- lapply(archivos, read.csv, fileEncoding = "ISO-8859-1") %>% lapply(dplyr::select, -c("Ciudades","X"))
+
+names(lista_datos) = archivos
+
+lista_seleccion_3 <- lapply(lista_datos, dplyr::select, c("TA","AREA_MN","AREA_AM","SIDI","NP","SPLIT","DIVISION", "SHAPE_MN","PAFRAC","IJI","LSI","TE","ED",
+                                                          "RNMDP_2020","T_Viviendas", "COM","ED_SING","EQUIP","IND","OFI","RES_PLU","RES_UNI"))
+
+
+
+datos_seleccion_3 <- list(lista_seleccion_3$df_datos_Maxabs.csv,lista_seleccion_3$df_datos_MinMax.csv,lista_seleccion_3$df_datos_Normalizer.csv, lista_seleccion_3$df_datos_Normalizer.csv,
+                          lista_seleccion_3$df_datos_PTrans.csv, lista_seleccion_3$df_datos_Rscaler.csv, lista_seleccion_3$df_datos_std.csv)
+
+nombres_seleccion_3 <- c("df_datos_Maxabs","df_datos_MinMax","df_datos_Normalizer",
+                         "df_datos_PTrans", "df_datos_Rscaler", "df_datos_std")
+
+n_factors <- c(5)
+fm_methods <- c("minchi")
+rotate_methods <- c("varimax","quartimax","bentlerT","equamax","varimin","geominT")
+#rotate_methods <- c("promax","oblimin")
+
+setwd("C:/Users/CRISTIAN/github/clustering-metrics")
+
+source("function_search_FA_parameters.R")
+
+library(dplyr)
+
+factor_analysis_export(datos_seleccion_3, nombres_seleccion_3, n_factors, fm_methods, rotate_methods)
+
+
+##########################################################################################################
+
+# Nuevas pruebas de seleccion de variables ####
+
+## 29.06.2023 ####
+
+## Parte I. Seleccion de un menor numero de variables ##
+
+## Cargar datos completos ####
+
+setwd("C:/Users/CRISTIAN/github/clustering-metrics/datos/datos_completos")
+
+archivos <- list.files(path = ".", pattern = "*.csv$")
+
+lista_datos <- lapply(archivos, read.csv, fileEncoding = "ISO-8859-1") %>% lapply(dplyr::select, -c("Ciudades","X"))
+
+names(lista_datos) = archivos
+
+lista_seleccion_4 <- lapply(lista_datos, dplyr::select, c("AREA_MN","GYRATE_AM","SIDI","SPLIT","MESH","DIVISION", "SHAPE_MN","PAFRAC","IJI","LSI","ED",
+                                                          "RNMDP_2020","T_Viviendas", "COM","ED_SING","EQUIP","IND","OFI","RES_PLU","RES_UNI"))
+
+
+
+datos_seleccion_4 <- list(lista_seleccion_4$df_datos_Maxabs.csv,lista_seleccion_4$df_datos_MinMax.csv,lista_seleccion_4$df_datos_Normalizer.csv,
+                          lista_seleccion_4$df_datos_PTrans.csv, lista_seleccion_4$df_datos_Rscaler.csv, lista_seleccion_4$df_datos_std.csv)
+
+nombres_seleccion_4 <- c("df_datos_Maxabs","df_datos_MinMax","df_datos_Normalizer",
+                         "df_datos_PTrans", "df_datos_Rscaler", "df_datos_std")
+
+n_factors <- c(5)
+fm_methods <- c("minchi")
+#rotate_methods <- c("varimax","quartimax","bentlerT","equamax","varimin","geominT")
+rotate_methods <- c("promax","oblimin")
+
+setwd("C:/Users/CRISTIAN/github/clustering-metrics")
+
+source("function_search_FA_parameters.R")
+
+library(dplyr)
+
+factor_analysis_export(datos_seleccion_4, nombres_seleccion_4, n_factors, fm_methods, rotate_methods)
+
+
+
+
+#############################################################################################################################
+#############################################################################################################################
+
+## 29.06.2023 ####
+
+## Parte II ##
+
+## Cargar datos completos ####
+
+setwd("C:/Users/CRISTIAN/github/clustering-metrics/datos/datos_completos")
+
+archivos <- list.files(path = ".", pattern = "*.csv$")
+
+lista_datos <- lapply(archivos, read.csv, fileEncoding = "ISO-8859-1") %>% lapply(dplyr::select, -c("Ciudades","X"))
+
+names(lista_datos) = archivos
+
+lista_seleccion_5 <- lapply(lista_datos, dplyr::select, c("GYRATE_AM","SIDI", "SPLIT","DIVISION", "SHAPE_MN","PAFRAC","IJI","LSI","ED",
+                                                          "RNMDP_2020","T_Viviendas", "COM","ED_SING","EQUIP","OFI","RES_PLU","RES_UNI"))
+
+
+
+datos_seleccion_5 <- list(lista_seleccion_5$df_datos_Maxabs.csv,lista_seleccion_5$df_datos_MinMax.csv,lista_seleccion_5$df_datos_Normalizer.csv,
+                          lista_seleccion_5$df_datos_PTrans.csv, lista_seleccion_5$df_datos_Rscaler.csv, lista_seleccion_5$df_datos_std.csv)
+
+nombres_seleccion_5 <- c("df_datos_Maxabs","df_datos_MinMax","df_datos_Normalizer",
+                         "df_datos_PTrans", "df_datos_Rscaler", "df_datos_std")
+
+n_factors <- c(5)
+fm_methods <- c("minchi")
+#rotate_methods <- c("varimax","quartimax","bentlerT","equamax","varimin","geominT")
+rotate_methods <- c("promax","oblimin")
+
+setwd("C:/Users/CRISTIAN/github/clustering-metrics")
+
+source("function_search_FA_parameters.R")
+
+library(dplyr)
+
+factor_analysis_export(datos_seleccion_5, nombres_seleccion_5, n_factors, fm_methods, rotate_methods)
+
+
+
+##############################################################################################
+
+##  Analysis 04.07.2023 ####
+
+
+## Cargar datos completos ####
+
+setwd("C:/Users/CRISTIAN/github/clustering-metrics/datos/datos_completos")
+
+archivos <- list.files(path = ".", pattern = "*.csv$")
+
+
+
+lista_datos <- lapply(archivos, read.csv, fileEncoding = "ISO-8859-1") %>% lapply(dplyr::select, -c("Ciudades","X"))
+
+names(lista_datos) = archivos
+
+
+lista_seleccion_ohne_AM <- lapply(lista_datos, dplyr::select, c("TA","LPI","AREA_MN","AREA_MD","GYRATE_MN","GYRATE_MD","SHEI","SIDI","SPLIT","MESH","SHAPE_MN","PAFRAC","SHAPE_MD","FRAC_MD","IJI","LSI","TE","ED",
+                                                          "RNMDP_2020","PobT", "Vehiculos","T_Viv_Prin", "COM","ED_SING","EQUIP","IND","OFI","RES_PLU","RES_UNI"))
+
+
+
+datos_seleccion_ohne_AM <- list(lista_seleccion_ohne_AM$df_datos_Maxabs.csv,lista_seleccion_ohne_AM$df_datos_MinMax.csv,lista_seleccion_ohne_AM$df_datos_Normalizer.csv, lista_seleccion_ohne_AM$df_datos_Normalizer.csv,
+                          lista_seleccion_ohne_AM$df_datos_PTrans.csv, lista_seleccion_ohne_AM$df_datos_Rscaler.csv, lista_seleccion_ohne_AM$df_datos_std.csv)
+
+nombres_seleccion_ohne_AM <- c("df_datos_Maxabs","df_datos_MinMax","df_datos_Normalizer", "df_datos_Normalizer",
+                         "df_datos_PTrans", "df_datos_Rscaler", "df_datos_std")
+
+
+n_factors <- c(5)
+fm_methods <- c("minchi")
+rotate_methods <- c("varimax","quartimax","bentlerT","equamax","varimin","geominT")
+#rotate_methods <- c("promax","oblimin")
+
+setwd("C:/Users/CRISTIAN/github/clustering-metrics")
+
+source("function_search_FA_parameters.R")
+
+library(dplyr)
+
+factor_analysis_export(datos_seleccion_ohne_AM, nombres_seleccion_ohne_AM, n_factors, fm_methods, rotate_methods)
+
+
+
+############################################################################################################
+
+##  Analysis 05.07.2023 ####
+
+
+## Cargar datos completos ####
+
+setwd("C:/Users/CRISTIAN/github/clustering-metrics/datos/datos_completos")
+
+archivos <- list.files(path = ".", pattern = "*.csv$")
+
+
+
+lista_datos <- lapply(archivos, read.csv, fileEncoding = "ISO-8859-1") %>% lapply(dplyr::select, -c("Ciudades","X"))
+
+names(lista_datos) = archivos
+
+
+lista_seleccion_ohne_AM <- lapply(lista_datos, dplyr::select, c("TA","LPI","AREA_MN","SIDI","SPLIT","MESH","SHAPE_MN","PAFRAC","IJI","LSI","ED",
+                                                                "RNMDP_2020","T_Viviendas","COM","ED_SING","EQUIP","IND","OFI","RES_PLU","RES_UNI"))
+
+
+
+datos_seleccion_ohne_AM <- list(lista_seleccion_ohne_AM$df_datos_Maxabs.csv,lista_seleccion_ohne_AM$df_datos_MinMax.csv,lista_seleccion_ohne_AM$df_datos_Normalizer.csv, lista_seleccion_ohne_AM$df_datos_Normalizer.csv,
+                                lista_seleccion_ohne_AM$df_datos_PTrans.csv, lista_seleccion_ohne_AM$df_datos_Rscaler.csv, lista_seleccion_ohne_AM$df_datos_std.csv)
+
+nombres_seleccion_ohne_AM <- c("df_datos_Maxabs","df_datos_MinMax","df_datos_Normalizer", "df_datos_Normalizer",
+                               "df_datos_PTrans", "df_datos_Rscaler", "df_datos_std")
+
+
+n_factors <- c(5)
+fm_methods <- c("minchi")
+#rotate_methods <- c("varimax","quartimax","bentlerT","equamax","varimin","geominT")
+
+rotate_methods <- c("varimax","equamax")
+#rotate_methods <- c("promax","oblimin")
+
+setwd("C:/Users/CRISTIAN/github/clustering-metrics")
+
+source("function_search_FA_parameters.R")
+
+library(dplyr)
+
+factor_analysis_export(datos_seleccion_ohne_AM, nombres_seleccion_ohne_AM, n_factors, fm_methods, rotate_methods)
+
+
+

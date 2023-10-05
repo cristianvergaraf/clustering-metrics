@@ -51,7 +51,7 @@ df_factors <- function(fa_result){
 }
 
 
-# funcion crea un objeto de workbook y va agregando los resultaos de los FA
+# funcion crea un objeto de workbook y va agregando los resultados de los FA
 
 summarize_fa <- function(wb,df, n = i,it = iterations, pc = parameter_combinations){
   if (it == 1){
